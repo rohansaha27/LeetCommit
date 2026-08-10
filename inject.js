@@ -6,7 +6,10 @@
 
 (function () {
   const SUBMIT_URL_RE = /\/problems\/([^/]+)\/submit\/?$/;
-  const CHECK_URL_RE = /\/submissions\/detail\/(\d+)\/check\/?$/;
+  // LeetCode has shipped this as both /submissions/detail/{id}/check/ and
+  // /submissions/detail/{id}/v2/check/ — match either so a future version
+  // bump doesn't silently stop detection again.
+  const CHECK_URL_RE = /\/submissions\/detail\/(\d+)\/(?:\w+\/)?check\/?$/;
 
   // submissionId -> { slug, lang, code, questionId }
   const pendingBySubmissionId = new Map();
