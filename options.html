@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>LeetCommit Settings</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #121212; color: #f0f0f0; margin: 0; padding: 32px;
+    }
+    .wrap { max-width: 480px; margin: 0 auto; }
+    h1 { font-size: 18px; margin-bottom: 4px; }
+    p.desc { color: #999; font-size: 13px; margin-top: 0; margin-bottom: 24px; }
+    label { display: block; font-size: 12px; color: #b0b0b0; margin: 16px 0 4px; }
+    input[type=text], input[type=password] {
+      width: 100%; box-sizing: border-box; background: #1e1e1e; color: #f0f0f0;
+      border: 1px solid #333; border-radius: 6px; padding: 9px 10px; font-size: 13px;
+    }
+    .hint { font-size: 11px; color: #777; margin-top: 4px; }
+    .row { display: flex; gap: 12px; }
+    .row > div { flex: 1; }
+    .actions { margin-top: 24px; display: flex; gap: 10px; align-items: center; }
+    button {
+      border: none; border-radius: 6px; padding: 9px 16px; font-size: 13px; cursor: pointer;
+    }
+    .btn-save { background: #2ea043; color: white; font-weight: 600; }
+    .btn-test { background: #2a2a2a; color: #ccc; }
+    .status { font-size: 13px; }
+    .status.ok { color: #4caf50; }
+    .status.error { color: #ff5252; }
+    a { color: #58a6ff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>LeetCommit</h1>
+    <p class="desc">Configure where your accepted solutions get pushed.</p>
+
+    <label>GitHub personal access token</label>
+    <input type="password" id="token" placeholder="ghp_..." />
+    <div class="hint">
+      Fine-grained PAT scoped to just this repo, with Contents: Read & write, is the safest option.
+      Create one at <a href="https://github.com/settings/tokens?type=beta" target="_blank">github.com/settings/tokens</a>.
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Repo owner</label>
+        <input type="text" id="owner" placeholder="your-username" />
+      </div>
+      <div>
+        <label>Repo name</label>
+        <input type="text" id="repo" placeholder="leetcode-solutions" />
+      </div>
+    </div>
+
+    <label>Branch</label>
+    <input type="text" id="branch" placeholder="main" />
+
+    <div class="actions">
+      <button class="btn-save" id="saveBtn">Save</button>
+      <button class="btn-test" id="testBtn">Test connection</button>
+      <span class="status" id="status"></span>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

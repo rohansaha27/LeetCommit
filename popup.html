@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>LeetCommit</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #121212; color: #f0f0f0; margin: 0; width: 300px; padding: 16px;
+    }
+    h1 { font-size: 14px; margin: 0 0 12px; }
+    .row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 8px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #555; flex-shrink: 0; }
+    .dot.ok { background: #4caf50; }
+    .dot.bad { background: #ff5252; }
+    a.link { color: #58a6ff; font-size: 12px; text-decoration: none; }
+    .pending {
+      margin-top: 14px; padding: 10px; background: #1e1e1e; border-radius: 8px;
+      border: 1px solid #2a2a2a;
+    }
+    .pending .title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .pending .meta { font-size: 11px; color: #999; margin-bottom: 10px; }
+    button {
+      border: none; border-radius: 6px; padding: 7px 12px; font-size: 12px; cursor: pointer;
+      background: #2ea043; color: white; font-weight: 600; margin-right: 6px;
+    }
+    button.secondary { background: #2a2a2a; color: #ccc; }
+    .empty { font-size: 12px; color: #777; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>LeetCommit</h1>
+  <div class="row"><span class="dot" id="statusDot"></span><span id="statusText">Checking configuration...</span></div>
+  <a class="link" href="#" id="optionsLink">Open settings</a>
+
+  <div id="pendingSection"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
