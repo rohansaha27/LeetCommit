@@ -122,7 +122,7 @@
           <label>Solution code</label>
           <div class="code-preview" id="codePreview"></div>
 
-          <label>Notes &mdash; approach, complexity, what you learned</label>
+          <label>Notes (approach, complexity, what you learned)</label>
           <textarea id="notes" placeholder="e.g. Two-pointer approach after sorting. O(n log n) time, O(1) space. Missed the edge case where..."></textarea>
 
           <div class="row">

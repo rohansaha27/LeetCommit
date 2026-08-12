@@ -61,8 +61,9 @@ LeetCommit/
   inject.js            # MAIN world: network interception
   content_script.js    # ISOLATED world: modal UI, DOM title/difficulty
   background.js        # service worker: all GitHub API calls
-  options.html/.js      # GitHub App connect (device flow) + repo picker, branch
-  popup.html/.js        # connection status + "pending submission" recovery
+  settings.js           # shared: GitHub App connect (device flow), repo picker, branch
+  popup.html/.js        # toolbar popup — full settings + "pending submission" recovery
+  options.html           # same settings, as a full page (right-click icon → Options)
 ```
 
 No build step — it's plain JS, loadable as an unpacked extension as-is.
@@ -89,28 +90,33 @@ No build step — it's plain JS, loadable as an unpacked extension as-is.
    - Save, copy the **Client ID** shown on the app's settings page (this is
      not a secret — the whole point of device flow is that no client secret
      is needed), and paste it into `GITHUB_CLIENT_ID` at the top of
-     `options.js`.
+     `settings.js`.
    - Also copy the app's **slug** — the URL-friendly name shown in its
      "Public page" link (`github.com/apps/<slug>`) — and paste it into
-     `GITHUB_APP_SLUG` in `options.js`.
+     `GITHUB_APP_SLUG` in `settings.js`.
 3. **Load the extension**:
    - Chrome → `chrome://extensions`
    - Enable "Developer mode" (top right)
    - "Load unpacked" → select the `LeetCommit` folder
-4. **Configure it**: click the LeetCommit toolbar icon → "Open settings" (or
-   right-click the icon → Options). This is two separate grants on GitHub's
-   side, both one click each — order doesn't matter:
-   - **"1. Install on a repo"** opens GitHub's install screen, where you
-     pick **exactly one repository** to grant Contents access to. The app
-     can't see or touch any other repo.
-   - **"2. Authorize GitHub"** opens a one-time-code screen that confirms
-     it's you — no token to copy.
-   Once both are done, the connected repo shows up automatically (no
-   owner/repo to type). Set the branch (defaults to `main`) and click
-   **Test connection** — it should say `Connected to {owner}/{repo}`.
-   - To push to a different repo later, click **Change repository access**
-     (opens GitHub's own installation settings) or run **"1. Install on a
-     repo"** again and pick another one.
+4. **Configure it**: click the LeetCommit toolbar icon — every setting lives
+   right there, no separate tab needed. It's a two-step process:
+   - **Step 1 — Connect GitHub**: opens a GitHub tab with a one-time code
+     confirming it's you (no token to copy).
+   - **Step 2 — Select a repository**: once step 1 is done, the popup
+     automatically shows a "Select a repository" prompt. Clicking it opens
+     GitHub's install screen where you pick **exactly one repository** to
+     grant Contents access to.
+
+   The popup closes as soon as either GitHub tab takes focus — that's
+   normal. Finish the step on GitHub, then click the toolbar icon again; it
+   picks up right where it left off (Step 2 automatically appears once
+   Step 1 finishes, and the connected repo shows automatically once Step 2
+   finishes). The **Branch** dropdown is pre-populated from the repo (its
+   default branch pre-selected) — pick a different one if needed.
+   - To switch to a different repo later, click **Switch repo** (opens
+     GitHub's own installation settings) — if the app is granted access to
+     more than one repo, a dropdown also appears to pick which one is
+     active without leaving the popup.
 
 ## Testing it end to end
 
@@ -165,7 +171,7 @@ No build step — it's plain JS, loadable as an unpacked extension as-is.
   grants it. It's not a secret, so it's safe to commit. Anyone building from
   source who wants an isolated dev environment can register their own
   GitHub App and swap the constant locally.
-- **One installation assumed**: `options.js` reads the first entry from
+- **One installation assumed**: `settings.js` reads the first entry from
   `/user/installations`. If you install the app on more than one GitHub
   account (e.g. personal + an org), only the first one's repos are offered
   — not expected in normal use, but worth knowing if `Authorize GitHub`

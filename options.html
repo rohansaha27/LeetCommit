@@ -4,110 +4,270 @@
   <meta charset="utf-8" />
   <title>LeetCommit Settings</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    /* Design tokens — resolved via the ui-ux-pro-max design-system search for
+       "developer tool utility extension": Modern Dark (Cinema) treatment
+       (glass, glow, avoid pure black) on the tool's slate/green color output. */
+    :root {
+      --color-background: #0f172a;
+      --color-primary: #1e293b;
+      --color-on-primary: #ffffff;
+      --color-secondary: #334155;
+      --color-accent: #22c55e;
+      --color-accent-strong: #16a34a;
+      --color-foreground: #f8fafc;
+      --color-muted: #94a3b8;
+      --color-muted-2: #64748b;
+      --color-border: rgba(255, 255, 255, 0.08);
+      --color-border-strong: rgba(255, 255, 255, 0.14);
+      --color-destructive: #ef4444;
+      --color-pending: #e3b341;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+      --radius-lg: 18px;
+      --radius-md: 10px;
+      --radius-sm: 7px;
+    }
+    * { box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #121212; color: #f0f0f0; margin: 0; padding: 32px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background:
+        radial-gradient(90% 60% at 20% -5%, rgba(34, 197, 94, 0.10), transparent 55%),
+        radial-gradient(70% 50% at 100% 0%, rgba(94, 106, 210, 0.08), transparent 50%),
+        var(--color-background);
+      color: var(--color-foreground); margin: 0; padding: 56px 20px;
+      font-size: 13px; -webkit-font-smoothing: antialiased;
     }
-    .wrap { max-width: 480px; margin: 0 auto; }
-    h1 { font-size: 18px; margin-bottom: 4px; }
-    p.desc { color: #999; font-size: 13px; margin-top: 0; margin-bottom: 24px; }
-    h2 { font-size: 13px; color: #ccc; margin: 28px 0 10px; text-transform: uppercase; letter-spacing: 0.03em; }
-    label { display: block; font-size: 12px; color: #b0b0b0; margin: 16px 0 4px; }
-    input[type=text], select {
-      width: 100%; box-sizing: border-box; background: #1e1e1e; color: #f0f0f0;
-      border: 1px solid #333; border-radius: 6px; padding: 9px 10px; font-size: 13px;
-    }
-    .hint { font-size: 11px; color: #777; margin-top: 4px; }
-    .actions { margin-top: 24px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    button {
-      border: none; border-radius: 6px; padding: 9px 16px; font-size: 13px; cursor: pointer;
-    }
-    button:disabled { opacity: 0.6; cursor: default; }
-    .btn-save { background: #2ea043; color: white; font-weight: 600; }
-    .btn-test { background: #2a2a2a; color: #ccc; }
-    .btn-connect { background: #238636; color: white; font-weight: 600; }
-    .btn-disconnect { background: #2a2a2a; color: #ff8a8a; }
-    .status { font-size: 13px; }
-    .status.ok { color: #4caf50; }
-    .status.error { color: #ff5252; }
-    a { color: #58a6ff; }
+    .wrap { max-width: 360px; margin: 0 auto; }
+    svg { display: block; fill: currentColor; }
 
-    .connect-card {
-      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px;
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
     }
-    .connected-row { display: flex; align-items: center; gap: 10px; }
-    .connected-dot { width: 8px; height: 8px; border-radius: 50%; background: #4caf50; flex-shrink: 0; }
-    .connected-name { font-size: 13px; font-weight: 600; }
-    .connected-repo { font-size: 12px; color: #999; margin-top: 4px; }
-    .connected-repo b { color: #ddd; font-weight: 600; }
 
-    .device-flow { display: none; margin-top: 4px; }
-    .device-flow.active { display: block; }
-    .user-code {
-      font-family: "SF Mono", Consolas, monospace; font-size: 24px; letter-spacing: 3px;
-      background: #0d0d0d; border: 1px solid #333; border-radius: 6px; padding: 12px 14px;
-      text-align: center; margin: 10px 0; color: #58a6ff;
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--color-accent); outline-offset: 2px; border-radius: 4px;
     }
-    .device-flow .waiting { font-size: 12px; color: #999; margin-top: 10px; }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .brand { display: flex; align-items: center; gap: 8px; }
+    .brand span { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+
+    .dot {
+      width: 9px; height: 9px; border-radius: 50%; background: var(--color-muted-2);
+      box-shadow: 0 0 0 3px transparent; transition: background-color .2s var(--ease), box-shadow .2s var(--ease);
+    }
+    .dot.ok { background: var(--color-accent); box-shadow: 0 0 0 3px rgba(34,197,94,0.18); }
+    .dot.pending { background: var(--color-pending); box-shadow: 0 0 0 3px rgba(227,179,65,0.18); animation: dotPulse 1.6s ease-in-out infinite; }
+
+    @keyframes dotPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+    p.desc { color: var(--color-muted); font-size: 12.5px; margin: 0 0 24px; line-height: 1.5; }
+
+    .card {
+      background: rgba(30, 41, 59, 0.55);
+      -webkit-backdrop-filter: blur(20px) saturate(140%);
+      backdrop-filter: blur(20px) saturate(140%);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+    }
+
+    button { font: inherit; cursor: pointer; border: none; color: inherit; }
+
+    .btn-primary {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; background: linear-gradient(135deg, var(--color-accent), var(--color-accent-strong));
+      color: var(--color-on-primary); font-weight: 600;
+      border-radius: var(--radius-md); padding: 11px; font-size: 13.5px;
+      box-shadow: 0 4px 16px rgba(34,197,94,0.22);
+      transition: box-shadow .16s var(--ease), transform .12s var(--ease), opacity .16s var(--ease);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 20px rgba(34,197,94,0.32); }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-primary:disabled { opacity: 0.55; cursor: default; box-shadow: none; transform: none; }
+
+    .btn-secondary {
+      flex: 1; background: var(--color-secondary); border: 1px solid var(--color-border-strong); color: var(--color-foreground);
+      border-radius: var(--radius-md); padding: 9px 10px; font-size: 12.5px; font-weight: 500;
+      transition: border-color .15s var(--ease), background-color .15s var(--ease), transform .12s var(--ease);
+    }
+    .btn-secondary:hover { background: #3c4a63; border-color: var(--color-muted-2); }
+    .btn-secondary:active { transform: scale(0.97); }
+
+    .btn-ghost {
+      background: none; color: var(--color-muted); padding: 9px 10px; font-size: 12.5px;
+      border-radius: var(--radius-md); transition: color .15s var(--ease), background-color .15s var(--ease);
+    }
+    .btn-ghost:hover { color: var(--color-foreground); background: rgba(255,255,255,0.06); }
+
+    .idle-panel { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 4px 2px; }
+    .idle-panel .gh-mark-large { color: var(--color-muted-2); margin-bottom: 16px; filter: drop-shadow(0 0 14px rgba(34,197,94,0.15)); }
+    .idle-panel .btn-primary { margin-bottom: 12px; }
+    .hint { font-size: 12px; color: var(--color-muted); line-height: 1.5; margin: 0; }
+
+    .code-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .code {
+      flex: 1; font-family: "SF Mono", Consolas, monospace; font-size: 23px; letter-spacing: 3px;
+      background: rgba(0,0,0,0.25); border: 1px solid var(--color-border); border-radius: var(--radius-md);
+      padding: 13px 0; text-align: center; color: var(--color-foreground);
+    }
+    .icon-btn {
+      width: 42px; height: 42px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--color-border); border-radius: var(--radius-md);
+      color: var(--color-muted); transition: color .15s var(--ease), border-color .15s var(--ease);
+    }
+    .icon-btn:hover { color: var(--color-foreground); border-color: var(--color-muted-2); }
+    .icon-btn.copied { color: var(--color-accent); border-color: var(--color-accent); }
+
+    .waiting { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-muted); margin: 0 0 16px; }
+    .waiting .pulse-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-pending); animation: dotPulse 1.6s ease-in-out infinite; flex-shrink: 0; }
+
+    .btn-row { display: flex; gap: 8px; }
+
+    .repo-link {
+      display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--color-foreground);
+      padding: 9px; margin: -9px -9px 4px; border-radius: var(--radius-md); transition: background-color .15s var(--ease);
+    }
+    .repo-link:hover { background: rgba(255,255,255,0.05); }
+    .repo-link:hover .ext-icon { opacity: 1; }
+    .repo-link .repo-icon { color: var(--color-muted); flex-shrink: 0; }
+    .repo-name { font-size: 15.5px; font-weight: 600; flex: 1; word-break: break-word; }
+    .ext-icon { color: var(--color-muted-2); opacity: 0; transition: opacity .15s var(--ease); flex-shrink: 0; }
+
+    .user-row { display: flex; align-items: center; gap: 7px; margin: 4px 0 18px; }
+    .avatar { width: 19px; height: 19px; border-radius: 50%; border: 1px solid var(--color-border-strong); display: none; }
+    .avatar.show { display: block; }
+    .sub { font-size: 12px; color: var(--color-muted); }
+
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block; font-size: 10.5px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.04em; color: var(--color-muted-2); margin-bottom: 6px;
+    }
+    .field select, .field input {
+      width: 100%; background: rgba(0,0,0,0.25); color: var(--color-foreground); border: 1px solid var(--color-border-strong);
+      border-radius: var(--radius-md); padding: 9px 10px; font-size: 13px; font-family: inherit;
+      transition: border-color .15s var(--ease);
+    }
+    .field select:focus, .field input:focus { outline: none; border-color: var(--color-accent); }
+    .input-icon-wrap { position: relative; }
+    .input-icon-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--color-muted-2); }
+    .input-icon-wrap input, .input-icon-wrap select { padding-left: 32px; }
+
+    .divider { height: 1px; background: var(--color-border); margin: 6px 0 16px; }
+
+    .chips { display: flex; gap: 5px; flex-wrap: nowrap; }
+    .chip {
+      display: flex; align-items: center; gap: 4px; flex: 0 0 auto;
+      background: rgba(255,255,255,0.05); color: var(--color-muted);
+      border-radius: 999px; padding: 6px 10px; font-size: 11.5px; font-weight: 500; white-space: nowrap;
+      transition: background-color .15s var(--ease), color .15s var(--ease);
+    }
+    .chip:hover { background: rgba(255,255,255,0.1); color: var(--color-foreground); }
+    .chip.danger:hover { background: rgba(239,68,68,0.14); color: var(--color-destructive); }
+    .chip:disabled { opacity: 0.5; cursor: default; }
+    .chip:disabled:hover { background: rgba(255,255,255,0.05); color: var(--color-muted); }
+
+    .status { font-size: 12px; margin-top: 14px; min-height: 15px; color: var(--color-muted); text-align: center; }
+    .status.ok { color: var(--color-accent); }
+    .status.error { color: var(--color-destructive); }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>LeetCommit</h1>
-    <p class="desc">Authorize GitHub and pick the one repo your accepted solutions get pushed to.</p>
+    <div class="topbar">
+      <div class="brand">
+        <svg width="19" height="19" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>LeetCommit</span>
+      </div>
+      <span class="dot" id="statusDot"></span>
+    </div>
+    <p class="desc">Connect GitHub and pick the one repo your accepted solutions get pushed to.</p>
 
-    <h2>GitHub</h2>
-    <div class="connect-card">
-      <div id="connectIdle">
-        <div class="hint" style="margin-top: 0;">
-          Two quick steps on GitHub's own pages — nothing to copy.
+    <div class="card">
+      <div id="connectIdle" class="idle-panel">
+        <svg class="gh-mark-large" width="34" height="34" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <button type="button" class="btn-primary" id="connectBtn">
+          <svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          Connect GitHub
+        </button>
+        <p class="hint">Step 1 of 2: confirm it's you on GitHub.</p>
+      </div>
+
+      <div id="connectActive" style="display:none">
+        <div class="code-row">
+          <div class="code" id="userCode">····-····</div>
+          <button type="button" class="icon-btn" id="copyCodeBtn" title="Copy code">
+            <svg width="16" height="16" viewBox="0 0 16 16"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zM6.75 1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/></svg>
+          </button>
         </div>
-        <div class="actions" style="margin-top: 10px;">
-          <button class="btn-connect" id="installBtn">1. Install on a repo</button>
-          <button class="btn-connect" id="connectBtn">2. Authorize GitHub</button>
-        </div>
-        <div class="hint">
-          Step 1 opens GitHub's install screen where you pick exactly one repo — LeetCommit
-          never sees or touches any other repo. Step 2 confirms it's you, with a one-time
-          code. Order doesn't matter, but you need both before a repo shows up below.
+        <p class="waiting" id="deviceStatus"><span class="pulse-dot"></span>Waiting for authorization…</p>
+        <div class="btn-row">
+          <button type="button" class="btn-secondary" id="reopenBtn">Reopen GitHub</button>
+          <button type="button" class="btn-ghost" id="cancelBtn">Cancel</button>
         </div>
       </div>
 
-      <div id="connectActive" class="device-flow">
-        <div class="hint">A GitHub tab just opened. Enter this code there and click Authorize:</div>
-        <div class="user-code" id="userCode">····-····</div>
-        <button class="btn-test" id="reopenBtn">Reopen GitHub</button>
-        <div class="waiting" id="deviceStatus">Waiting for authorization…</div>
+      <div id="connectNeedsRepo" class="idle-panel" style="display:none">
+        <div class="user-row" style="margin-top:0;">
+          <img class="avatar" id="needsRepoAvatar" alt="" />
+          <span class="sub" id="needsRepoName"></span>
+        </div>
+        <button type="button" class="btn-primary" id="selectRepoBtn">
+          <svg width="15" height="15" viewBox="0 0 16 16"><path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 110-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 011-1h8z"/></svg>
+          Select a repository
+        </button>
+        <p class="hint">Step 2 of 2: pick exactly one repo to grant push access to. You can switch it later.</p>
+        <button type="button" class="btn-ghost" id="needsRepoDisconnectBtn" style="margin-top:8px;">Use a different account</button>
       </div>
 
       <div id="connectDone" style="display:none">
-        <div class="connected-row">
-          <span class="connected-dot"></span>
-          <span class="connected-name" id="connectedName"></span>
+        <a class="repo-link" id="repoLink" target="_blank" rel="noopener">
+          <svg class="repo-icon" width="16" height="16" viewBox="0 0 16 16"><path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 110-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 011-1h8z"/></svg>
+          <span class="repo-name" id="connectedRepo"></span>
+          <svg class="ext-icon" width="13" height="13" viewBox="0 0 16 16"><path d="M3.5 2.75a.75.75 0 00-.75.75v8a.75.75 0 00.75.75h8a.75.75 0 00.75-.75v-3.5a.75.75 0 011.5 0v3.5A2.25 2.25 0 0111.5 13.5h-8A2.25 2.25 0 011.25 11.25v-8A2.25 2.25 0 013.5 1h3.5a.75.75 0 010 1.5h-3.5zM10.5 1a.75.75 0 000 1.5h1.94L6.72 8.22a.75.75 0 101.06 1.06L13.5 3.56v1.94a.75.75 0 001.5 0v-3.75a.75.75 0 00-.75-.75h-3.75z"/></svg>
+        </a>
+        <div class="user-row">
+          <img class="avatar" id="avatarImg" alt="" />
+          <span class="sub" id="connectedName"></span>
         </div>
-        <div class="connected-repo" id="connectedRepo"></div>
-        <div id="repoPicker" style="display:none; margin-top: 10px;">
-          <label>Multiple repos are authorized — pick the one to push to</label>
+
+        <div id="repoPicker" class="field" style="display:none">
+          <label>Repository</label>
           <select id="repoSelect"></select>
         </div>
-        <div class="actions">
-          <button class="btn-test" id="changeRepoBtn">Change repository access</button>
-          <button class="btn-test" id="refreshBtn">Refresh</button>
-          <button class="btn-disconnect" id="disconnectBtn">Disconnect</button>
+
+        <div class="field">
+          <label>Branch</label>
+          <div class="input-icon-wrap">
+            <svg width="14" height="14" viewBox="0 0 16 16"><path d="M11.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122V6A2.5 2.5 0 0110 8.5H6a1 1 0 00-1 1v1.128a2.251 2.251 0 11-1.5 0V5.372a2.25 2.25 0 111.5 0v1.836A2.492 2.492 0 016 7h4a1 1 0 001-1v-.628A2.25 2.25 0 019.5 3.25zM4.25 12a.75.75 0 100 1.5.75.75 0 000-1.5zM3.5 3.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"/></svg>
+            <select id="branch"></select>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="chips">
+          <button type="button" class="chip" id="refreshBtn" title="Re-check which repos are granted">
+            <svg width="11" height="11" viewBox="0 0 16 16"><path d="M1.705 8.005a.75.75 0 01.834.656 5.5 5.5 0 009.592 2.97l-1.204-1.204a.25.25 0 01.177-.427h3.646a.25.25 0 01.25.25v3.646a.25.25 0 01-.427.177l-1.38-1.38A7 7 0 011.05 8.84a.75.75 0 01.656-.834zM8 1.5a6.5 6.5 0 00-5.585 3.175.75.75 0 11-1.29-.766A8 8 0 0115.95 7.16a.75.75 0 11-1.49.174A6.5 6.5 0 008 1.5z"/></svg>
+            Refresh
+          </button>
+          <button type="button" class="chip" id="switchRepoBtn" title="Grant access to a different repo on GitHub">
+            <svg width="11" height="11" viewBox="0 0 16 16"><path d="M3.5 2.75a.75.75 0 00-.75.75v8a.75.75 0 00.75.75h8a.75.75 0 00.75-.75v-3.5a.75.75 0 011.5 0v3.5A2.25 2.25 0 0111.5 13.5h-8A2.25 2.25 0 011.25 11.25v-8A2.25 2.25 0 013.5 1h3.5a.75.75 0 010 1.5h-3.5zM10.5 1a.75.75 0 000 1.5h1.94L6.72 8.22a.75.75 0 101.06 1.06L13.5 3.56v1.94a.75.75 0 001.5 0v-3.75a.75.75 0 00-.75-.75h-3.75z"/></svg>
+            Switch repo
+          </button>
+          <button type="button" class="chip danger" id="disconnectBtn">
+            <svg width="11" height="11" viewBox="0 0 16 16"><path d="M11 1.75V3h2.25a.75.75 0 010 1.5H2.75a.75.75 0 010-1.5H5V1.75C5 .784 5.784 0 6.75 0h2.5C10.216 0 11 .784 11 1.75zM4.496 6.675a.75.75 0 10-1.492.15l.66 6.6A1.75 1.75 0 005.405 15h5.19a1.75 1.75 0 001.741-1.575l.66-6.6a.75.75 0 00-1.492-.15l-.66 6.6a.25.25 0 01-.249.225h-5.19a.25.25 0 01-.249-.225l-.66-6.6z"/></svg>
+            Disconnect
+          </button>
         </div>
       </div>
     </div>
 
-    <label>Branch</label>
-    <input type="text" id="branch" placeholder="main" />
-
-    <div class="actions">
-      <button class="btn-save" id="saveBtn">Save branch</button>
-      <button class="btn-test" id="testBtn">Test connection</button>
-      <span class="status" id="status"></span>
-    </div>
+    <p class="status" id="status"></p>
   </div>
 
-  <script src="options.js"></script>
+  <script src="settings.js"></script>
 </body>
 </html>

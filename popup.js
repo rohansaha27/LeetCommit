@@ -1,3 +1,6 @@
+// Popup-only addition on top of settings.js: surfaces a submission that was
+// detected but never pushed (modal skipped or closed) with a one-click push.
+
 const EXT_BY_LANG = {
   python: "py",
   python3: "py",
@@ -24,29 +27,11 @@ function extFor(lang) {
   return EXT_BY_LANG[(lang || "").toLowerCase()] || "txt";
 }
 
-document.getElementById("optionsLink").addEventListener("click", (e) => {
-  e.preventDefault();
-  chrome.runtime.openOptionsPage();
-});
-
-async function checkConfig() {
-  const cfg = await chrome.storage.local.get(["githubToken", "owner", "repo"]);
-  const dot = document.getElementById("statusDot");
-  const text = document.getElementById("statusText");
-  if (cfg.githubToken && cfg.owner && cfg.repo) {
-    dot.className = "dot ok";
-    text.textContent = `Configured: ${cfg.owner}/${cfg.repo}`;
-  } else {
-    dot.className = "dot bad";
-    text.textContent = "Not configured yet";
-  }
-}
-
 async function renderPending() {
   const { pendingSubmission } = await chrome.storage.session.get("pendingSubmission");
   const section = document.getElementById("pendingSection");
   if (!pendingSubmission) {
-    section.innerHTML = `<div class="empty">No pending submission. Solve something on LeetCode and hit Submit — an Accepted result will show a push prompt automatically.</div>`;
+    section.innerHTML = "";
     return;
   }
 
@@ -56,9 +41,11 @@ async function renderPending() {
   section.innerHTML = `
     <div class="pending">
       <div class="title">${title}</div>
-      <div class="meta">${lang} &middot; detected ${minutesAgo <= 0 ? "just now" : minutesAgo + "m ago"} &middot; skipped or modal closed</div>
-      <button id="pushBtn">Push now</button>
-      <button class="secondary" id="discardBtn">Discard</button>
+      <div class="meta">${lang} &middot; detected ${minutesAgo <= 0 ? "just now" : minutesAgo + "m ago"}</div>
+      <div class="btn-row">
+        <button type="button" class="push-btn" id="pushBtn">Push now</button>
+        <button type="button" class="discard-btn" id="discardBtn">Discard</button>
+      </div>
     </div>
   `;
 
@@ -103,5 +90,4 @@ async function renderPending() {
   });
 }
 
-checkConfig();
 renderPending();
