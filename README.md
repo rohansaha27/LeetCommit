@@ -61,7 +61,7 @@ LeetCommit/
   inject.js            # MAIN world: network interception
   content_script.js    # ISOLATED world: modal UI, DOM title/difficulty
   background.js        # service worker: all GitHub API calls
-  options.html/.js      # PAT, owner, repo, branch
+  options.html/.js      # GitHub App connect (device flow) + repo picker, branch
   popup.html/.js        # connection status + "pending submission" recovery
 ```
 
@@ -71,18 +71,46 @@ No build step — it's plain JS, loadable as an unpacked extension as-is.
 
 1. **Create (or pick) a GitHub repo** to hold solutions, e.g.
    `leetcode-solutions`.
-2. **Create a token**: https://github.com/settings/tokens?type=beta →
-   fine-grained PAT, scoped to only that repo, with **Contents: Read and
-   write** permission. (Skip OAuth device flow — massive overkill for a
-   single-user tool pushing to one repo you already own.)
+2. **Create a GitHub App** (one-time, only needed the first time you set
+   this extension up — if you're publishing to the Chrome Web Store, do
+   this once and ship the Client ID baked into the published build; users
+   installing from the store never see this step):
+   - Go to https://github.com/settings/apps → **New GitHub App**.
+   - Any Application name/Homepage URL works. Uncheck **Active** under
+     Webhook (no webhook needed).
+   - Under **Repository permissions**, set **Contents: Read and write**.
+     Leave everything else "No access" — this is the permission users will
+     see and grant on the repo they pick.
+   - Under **Where can this GitHub App be installed?**, choose **Any
+     account** if you're distributing this publicly.
+   - Under **Identifying and authorizing users**: enable **Device Flow**,
+     and uncheck **Expire user authorization tokens** (keeps tokens
+     long-lived, so there's no refresh-token flow to build).
+   - Save, copy the **Client ID** shown on the app's settings page (this is
+     not a secret — the whole point of device flow is that no client secret
+     is needed), and paste it into `GITHUB_CLIENT_ID` at the top of
+     `options.js`.
+   - Also copy the app's **slug** — the URL-friendly name shown in its
+     "Public page" link (`github.com/apps/<slug>`) — and paste it into
+     `GITHUB_APP_SLUG` in `options.js`.
 3. **Load the extension**:
    - Chrome → `chrome://extensions`
    - Enable "Developer mode" (top right)
    - "Load unpacked" → select the `LeetCommit` folder
 4. **Configure it**: click the LeetCommit toolbar icon → "Open settings" (or
-   right-click the icon → Options). Enter the PAT, owner, repo, branch
-   (defaults to `main`). Click **Test connection** — it should say
-   `Connected to {owner}/{repo}` and confirm push access.
+   right-click the icon → Options). This is two separate grants on GitHub's
+   side, both one click each — order doesn't matter:
+   - **"1. Install on a repo"** opens GitHub's install screen, where you
+     pick **exactly one repository** to grant Contents access to. The app
+     can't see or touch any other repo.
+   - **"2. Authorize GitHub"** opens a one-time-code screen that confirms
+     it's you — no token to copy.
+   Once both are done, the connected repo shows up automatically (no
+   owner/repo to type). Set the branch (defaults to `main`) and click
+   **Test connection** — it should say `Connected to {owner}/{repo}`.
+   - To push to a different repo later, click **Change repository access**
+     (opens GitHub's own installation settings) or run **"1. Install on a
+     repo"** again and pick another one.
 
 ## Testing it end to end
 
@@ -129,9 +157,19 @@ No build step — it's plain JS, loadable as an unpacked extension as-is.
   update the selectors. The network-interception detection logic in
   `inject.js` is more durable since it depends on LeetCode's internal REST
   API shape, but that too could change.
-- **Fine-grained PAT expiration**: GitHub fine-grained tokens expire (max 1
-  year); you'll need to regenerate and re-paste into Options when that
-  happens — Test connection will start failing with a 401.
+- **`GITHUB_CLIENT_ID` identifies the app, not the user**: everyone who
+  installs this extension from the same build (e.g. the Chrome Web Store
+  listing) shares one GitHub App identity — that's expected and matches how
+  `gh`, VS Code, etc. work. Each user still authorizes their own repo
+  independently; the app never gets access beyond what an individual user
+  grants it. It's not a secret, so it's safe to commit. Anyone building from
+  source who wants an isolated dev environment can register their own
+  GitHub App and swap the constant locally.
+- **One installation assumed**: `options.js` reads the first entry from
+  `/user/installations`. If you install the app on more than one GitHub
+  account (e.g. personal + an org), only the first one's repos are offered
+  — not expected in normal use, but worth knowing if `Authorize GitHub`
+  seems to show the wrong account.
 - **`total_correct`/`total_testcases` are best-effort display only** — not
   used for the Accepted decision itself (that's `status_code === 10`).
 

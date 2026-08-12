@@ -11,46 +11,90 @@
     .wrap { max-width: 480px; margin: 0 auto; }
     h1 { font-size: 18px; margin-bottom: 4px; }
     p.desc { color: #999; font-size: 13px; margin-top: 0; margin-bottom: 24px; }
+    h2 { font-size: 13px; color: #ccc; margin: 28px 0 10px; text-transform: uppercase; letter-spacing: 0.03em; }
     label { display: block; font-size: 12px; color: #b0b0b0; margin: 16px 0 4px; }
-    input[type=text], input[type=password] {
+    input[type=text], select {
       width: 100%; box-sizing: border-box; background: #1e1e1e; color: #f0f0f0;
       border: 1px solid #333; border-radius: 6px; padding: 9px 10px; font-size: 13px;
     }
     .hint { font-size: 11px; color: #777; margin-top: 4px; }
-    .row { display: flex; gap: 12px; }
-    .row > div { flex: 1; }
-    .actions { margin-top: 24px; display: flex; gap: 10px; align-items: center; }
+    .actions { margin-top: 24px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     button {
       border: none; border-radius: 6px; padding: 9px 16px; font-size: 13px; cursor: pointer;
     }
+    button:disabled { opacity: 0.6; cursor: default; }
     .btn-save { background: #2ea043; color: white; font-weight: 600; }
     .btn-test { background: #2a2a2a; color: #ccc; }
+    .btn-connect { background: #238636; color: white; font-weight: 600; }
+    .btn-disconnect { background: #2a2a2a; color: #ff8a8a; }
     .status { font-size: 13px; }
     .status.ok { color: #4caf50; }
     .status.error { color: #ff5252; }
     a { color: #58a6ff; }
+
+    .connect-card {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px;
+    }
+    .connected-row { display: flex; align-items: center; gap: 10px; }
+    .connected-dot { width: 8px; height: 8px; border-radius: 50%; background: #4caf50; flex-shrink: 0; }
+    .connected-name { font-size: 13px; font-weight: 600; }
+    .connected-repo { font-size: 12px; color: #999; margin-top: 4px; }
+    .connected-repo b { color: #ddd; font-weight: 600; }
+
+    .device-flow { display: none; margin-top: 4px; }
+    .device-flow.active { display: block; }
+    .user-code {
+      font-family: "SF Mono", Consolas, monospace; font-size: 24px; letter-spacing: 3px;
+      background: #0d0d0d; border: 1px solid #333; border-radius: 6px; padding: 12px 14px;
+      text-align: center; margin: 10px 0; color: #58a6ff;
+    }
+    .device-flow .waiting { font-size: 12px; color: #999; margin-top: 10px; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>LeetCommit</h1>
-    <p class="desc">Configure where your accepted solutions get pushed.</p>
+    <p class="desc">Authorize GitHub and pick the one repo your accepted solutions get pushed to.</p>
 
-    <label>GitHub personal access token</label>
-    <input type="password" id="token" placeholder="ghp_..." />
-    <div class="hint">
-      Fine-grained PAT scoped to just this repo, with Contents: Read & write, is the safest option.
-      Create one at <a href="https://github.com/settings/tokens?type=beta" target="_blank">github.com/settings/tokens</a>.
-    </div>
-
-    <div class="row">
-      <div>
-        <label>Repo owner</label>
-        <input type="text" id="owner" placeholder="your-username" />
+    <h2>GitHub</h2>
+    <div class="connect-card">
+      <div id="connectIdle">
+        <div class="hint" style="margin-top: 0;">
+          Two quick steps on GitHub's own pages — nothing to copy.
+        </div>
+        <div class="actions" style="margin-top: 10px;">
+          <button class="btn-connect" id="installBtn">1. Install on a repo</button>
+          <button class="btn-connect" id="connectBtn">2. Authorize GitHub</button>
+        </div>
+        <div class="hint">
+          Step 1 opens GitHub's install screen where you pick exactly one repo — LeetCommit
+          never sees or touches any other repo. Step 2 confirms it's you, with a one-time
+          code. Order doesn't matter, but you need both before a repo shows up below.
+        </div>
       </div>
-      <div>
-        <label>Repo name</label>
-        <input type="text" id="repo" placeholder="leetcode-solutions" />
+
+      <div id="connectActive" class="device-flow">
+        <div class="hint">A GitHub tab just opened. Enter this code there and click Authorize:</div>
+        <div class="user-code" id="userCode">····-····</div>
+        <button class="btn-test" id="reopenBtn">Reopen GitHub</button>
+        <div class="waiting" id="deviceStatus">Waiting for authorization…</div>
+      </div>
+
+      <div id="connectDone" style="display:none">
+        <div class="connected-row">
+          <span class="connected-dot"></span>
+          <span class="connected-name" id="connectedName"></span>
+        </div>
+        <div class="connected-repo" id="connectedRepo"></div>
+        <div id="repoPicker" style="display:none; margin-top: 10px;">
+          <label>Multiple repos are authorized — pick the one to push to</label>
+          <select id="repoSelect"></select>
+        </div>
+        <div class="actions">
+          <button class="btn-test" id="changeRepoBtn">Change repository access</button>
+          <button class="btn-test" id="refreshBtn">Refresh</button>
+          <button class="btn-disconnect" id="disconnectBtn">Disconnect</button>
+        </div>
       </div>
     </div>
 
@@ -58,7 +102,7 @@
     <input type="text" id="branch" placeholder="main" />
 
     <div class="actions">
-      <button class="btn-save" id="saveBtn">Save</button>
+      <button class="btn-save" id="saveBtn">Save branch</button>
       <button class="btn-test" id="testBtn">Test connection</button>
       <span class="status" id="status"></span>
     </div>
