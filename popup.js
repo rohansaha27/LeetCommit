@@ -39,12 +39,14 @@ async function renderPending() {
   const minutesAgo = Math.round((Date.now() - detectedAt) / 60000);
 
   section.innerHTML = `
-    <div class="pending">
-      <div class="title">${title}</div>
-      <div class="meta">${lang} &middot; detected ${minutesAgo <= 0 ? "just now" : minutesAgo + "m ago"}</div>
-      <div class="btn-row">
-        <button type="button" class="push-btn" id="pushBtn">Push now</button>
-        <button type="button" class="discard-btn" id="discardBtn">Discard</button>
+    <div class="save-dialog-wrap" style="padding-top:0;">
+      <div class="glass-card pending-card">
+        <div class="title">${title}</div>
+        <div class="meta">${lang} &middot; detected ${minutesAgo <= 0 ? "just now" : minutesAgo + "m ago"}</div>
+        <div class="btn-row">
+          <button type="button" class="push-btn" id="pushBtn">Push now</button>
+          <button type="button" class="discard-btn" id="discardBtn">Discard</button>
+        </div>
       </div>
     </div>
   `;

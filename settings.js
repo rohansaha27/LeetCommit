@@ -17,7 +17,8 @@ const GITHUB_APP_SLUG = "https://github.com/apps/leetcommitv1";
 const DEVICE_CODE_URL = "https://github.com/login/device/code";
 const ACCESS_TOKEN_URL = "https://github.com/login/oauth/access_token";
 
-const statusDotEl = document.getElementById("statusDot");
+const statusBadgeEl = document.getElementById("statusBadge");
+const statusBadgeLabelEl = document.getElementById("statusBadgeLabel");
 const statusEl = document.getElementById("status");
 const branchEl = document.getElementById("branch");
 
@@ -39,11 +40,13 @@ const copyCodeBtn = document.getElementById("copyCodeBtn");
 const userCodeEl = document.getElementById("userCode");
 const deviceStatusEl = document.getElementById("deviceStatus");
 const repoLinkEl = document.getElementById("repoLink");
+const profileLinkEl = document.getElementById("profileLink");
 const connectedRepoEl = document.getElementById("connectedRepo");
 const connectedNameEl = document.getElementById("connectedName");
 const avatarImgEl = document.getElementById("avatarImg");
 const repoPickerEl = document.getElementById("repoPicker");
 const repoSelectEl = document.getElementById("repoSelect");
+const lastCommitTimeEl = document.getElementById("lastCommitTime");
 
 function setStatus(text, cls) {
   statusEl.textContent = text || "";
@@ -54,28 +57,34 @@ function apiHeaders(token) {
   return { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" };
 }
 
+function setBadge(label, mode) {
+  if (!statusBadgeEl) return;
+  statusBadgeLabelEl.textContent = label;
+  statusBadgeEl.className = "badge" + (mode ? " is-" + mode : "");
+}
+
 function showIdle() {
-  connectIdleEl.style.display = "block";
+  connectIdleEl.style.display = "flex";
   connectActiveEl.style.display = "none";
   connectNeedsRepoEl.style.display = "none";
   connectDoneEl.style.display = "none";
-  if (statusDotEl) statusDotEl.className = "dot";
+  setBadge("Step 1 / 2");
 }
 
 function showActive() {
   connectIdleEl.style.display = "none";
-  connectActiveEl.style.display = "block";
+  connectActiveEl.style.display = "flex";
   connectNeedsRepoEl.style.display = "none";
   connectDoneEl.style.display = "none";
-  if (statusDotEl) statusDotEl.className = "dot pending";
+  setBadge("Step 1 / 2", "pending");
 }
 
 function showNeedsRepo(cfg) {
   connectIdleEl.style.display = "none";
   connectActiveEl.style.display = "none";
-  connectNeedsRepoEl.style.display = "block";
+  connectNeedsRepoEl.style.display = "flex";
   connectDoneEl.style.display = "none";
-  if (statusDotEl) statusDotEl.className = "dot pending";
+  setBadge("Step 2 / 2", "pending");
 
   needsRepoNameEl.textContent = cfg.githubUser ? `Connected as ${cfg.githubUser}` : "Connected to GitHub";
   if (cfg.githubAvatar) {
@@ -90,12 +99,13 @@ function showDone(cfg) {
   connectIdleEl.style.display = "none";
   connectActiveEl.style.display = "none";
   connectNeedsRepoEl.style.display = "none";
-  connectDoneEl.style.display = "block";
-  if (statusDotEl) statusDotEl.className = "dot ok";
+  connectDoneEl.style.display = "flex";
+  setBadge("Active", "active");
 
   connectedRepoEl.textContent = `${cfg.owner}/${cfg.repo}`;
   repoLinkEl.href = `https://github.com/${cfg.owner}/${cfg.repo}`;
-  connectedNameEl.textContent = cfg.githubUser ? `as ${cfg.githubUser}` : "";
+  connectedNameEl.textContent = cfg.githubUser || "GitHub user";
+  if (profileLinkEl) profileLinkEl.href = cfg.githubUser ? `https://github.com/${cfg.githubUser}` : "https://github.com";
   if (cfg.githubAvatar) {
     avatarImgEl.src = cfg.githubAvatar;
     avatarImgEl.classList.add("show");
@@ -112,6 +122,38 @@ function showDone(cfg) {
     repoSelectEl.value = `${cfg.owner}/${cfg.repo}`;
   } else {
     repoPickerEl.style.display = "none";
+  }
+}
+
+// Best-effort relative-time label for the repo card's "Last commit" row —
+// non-fatal if it fails, since it's a secondary detail, not core function.
+function formatRelativeTime(dateStr) {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.round(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.round(days / 30);
+  return `${months}mo ago`;
+}
+
+async function loadLastCommit(token, owner, repo, branch) {
+  if (!lastCommitTimeEl) return;
+  lastCommitTimeEl.textContent = "—";
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/commits?sha=${encodeURIComponent(branch)}&per_page=1`,
+      { headers: apiHeaders(token) }
+    );
+    if (!res.ok) return;
+    const commits = await res.json();
+    const date = commits[0] && commits[0].commit && commits[0].commit.committer && commits[0].commit.committer.date;
+    lastCommitTimeEl.textContent = date ? formatRelativeTime(date) : "No commits yet";
+  } catch (e) {
+    // Non-fatal — leave the placeholder in place.
   }
 }
 
@@ -154,6 +196,7 @@ async function loadBranches(token, owner, repo, currentBranch) {
 async function renderConnected(cfg) {
   showDone(cfg);
   await loadBranches(cfg.githubToken, cfg.owner, cfg.repo, cfg.branch);
+  loadLastCommit(cfg.githubToken, cfg.owner, cfg.repo, branchEl.value || cfg.branch);
 }
 
 function installUrl() {
@@ -527,8 +570,11 @@ async function disconnectAll() {
 disconnectBtn.addEventListener("click", disconnectAll);
 needsRepoDisconnectBtn.addEventListener("click", disconnectAll);
 
-branchEl.addEventListener("change", () => {
-  chrome.storage.local.set({ branch: branchEl.value }, () => setStatus(`Branch switched to ${branchEl.value}.`, "ok"));
+branchEl.addEventListener("change", async () => {
+  await chrome.storage.local.set({ branch: branchEl.value });
+  setStatus(`Branch switched to ${branchEl.value}.`, "ok");
+  const { githubToken, owner, repo } = await chrome.storage.local.get(["githubToken", "owner", "repo"]);
+  loadLastCommit(githubToken, owner, repo, branchEl.value);
 });
 
 loadConfig();
