@@ -18,7 +18,7 @@
       border: 1px solid var(--border-muted);
       box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
     }
-    .app.page-card .app-main { overflow-y: visible; }
+    .app.page-card .app-main { max-height: none; overflow-y: visible; }
   </style>
 </head>
 <body>
@@ -48,23 +48,6 @@
           Connect with GitHub
         </button>
 
-        <div class="glass-card feature-list">
-          <div class="feature-row amber">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.5 8.5-.17.05-.33.05-.5 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
-            <div>
-              <p class="title">Permission Required</p>
-              <p class="desc">We only request access to public/private repositories you select to commit your code. No personal data is read.</p>
-            </div>
-          </div>
-          <div class="feature-row green">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <div>
-              <p class="title">Private &amp; Secure</p>
-              <p class="desc">All tokens are stored locally in your browser's secure storage and never touch our servers.</p>
-            </div>
-          </div>
-        </div>
-
         <p class="hint-row">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           You'll select a repository in the next step
@@ -73,8 +56,8 @@
 
       <div id="connectActive" class="state-panel" style="display:none">
         <div class="hero">
-          <h2>Almost there</h2>
-          <p>Enter this code on GitHub to finish connecting your account.</p>
+          <h2>Authorize on GitHub</h2>
+          <p>Enter this code on GitHub's device page to finish connecting.</p>
         </div>
 
         <div>
@@ -113,11 +96,6 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v3.3"/><circle cx="13" cy="17" r="2"/><circle cx="20" cy="14" r="2"/><path d="M13 19v-1a2 2 0 0 1 2-2h3a2 2 0 0 0 2-2v-1"/></svg>
           Select a repository
         </button>
-
-        <p class="hint-row">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          You can switch repos anytime from here
-        </p>
 
         <button type="button" class="btn-ghost" id="needsRepoDisconnectBtn" style="align-self:center;">Use a different account</button>
       </div>
@@ -167,7 +145,6 @@
             <span class="k">Last commit</span>
             <span class="v" id="lastCommitTime">—</span>
           </div>
-          <div class="progress-track"><div class="progress-fill"></div></div>
         </section>
 
         <section class="action-grid">

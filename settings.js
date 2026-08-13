@@ -100,7 +100,7 @@ function showDone(cfg) {
   connectActiveEl.style.display = "none";
   connectNeedsRepoEl.style.display = "none";
   connectDoneEl.style.display = "flex";
-  setBadge("Active", "active");
+  setBadge("Connected", "active");
 
   connectedRepoEl.textContent = `${cfg.owner}/${cfg.repo}`;
   repoLinkEl.href = `https://github.com/${cfg.owner}/${cfg.repo}`;

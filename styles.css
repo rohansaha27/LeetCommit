@@ -44,28 +44,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* ---------- shell ---------- */
 
 .app {
-  position: relative;
   display: flex;
   flex-direction: column;
-  width: 400px;
+  width: 380px;
   max-height: 600px;
-  overflow: hidden;
   background: var(--bg-deep);
-}
-.app::before, .app::after {
-  content: ""; position: absolute; pointer-events: none; z-index: 0; border-radius: 50%;
-}
-.app::before {
-  top: -96px; right: -96px; width: 220px; height: 220px;
-  background: rgba(245, 158, 11, 0.14); filter: blur(60px);
-}
-.app::after {
-  top: 40%; left: -96px; width: 220px; height: 220px;
-  background: rgba(34, 197, 94, 0.08); filter: blur(60px);
 }
 
 .app-header {
-  position: relative; z-index: 2;
   display: flex; align-items: center; justify-content: space-between;
   padding: 24px 24px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
@@ -96,13 +82,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .badge.is-active .pulse-dot { background: var(--brand-secondary); animation: pulse 1.6s ease-in-out infinite; }
 
 .app-main {
-  position: relative; z-index: 1;
-  flex: 1; min-height: 0; overflow-y: auto;
-  padding: 24px; display: flex; flex-direction: column; gap: 24px;
+  max-height: 500px; overflow-y: auto;
+  padding: 20px 24px; display: flex; flex-direction: column; gap: 18px;
 }
 
 .app-footer {
-  position: relative; z-index: 2; flex-shrink: 0;
+  flex-shrink: 0;
   padding: 13px 24px; border-top: 1px solid rgba(255, 255, 255, 0.05);
   display: flex; align-items: center; justify-content: space-between;
   font-size: 11px; font-weight: 500; color: var(--text-muted-3);
@@ -125,11 +110,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   padding: 14px; border-radius: 12px; background: #fff; color: #000;
   font-weight: 700; font-size: 14px;
   box-shadow: 0 10px 25px -8px rgba(255, 255, 255, 0.15);
-  transition: background-color .2s var(--ease), transform .2s var(--ease);
+  transition: background-color .15s var(--ease);
 }
-.btn-white:hover { background: #e4e4e7; transform: scale(1.02); }
-.btn-white:active { transform: scale(0.98); }
-.btn-white:disabled { opacity: 0.55; cursor: default; transform: none; }
+.btn-white:hover { background: #e4e4e7; }
+.btn-white:disabled { opacity: 0.55; cursor: default; }
 .btn-white svg { width: 18px; height: 18px; }
 
 .btn-ghost {
@@ -158,15 +142,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .hero h2 { font-size: 20px; font-weight: 700; margin: 0 0 8px; }
 .hero p { font-size: 12px; color: var(--text-muted); line-height: 1.55; margin: 0; padding: 0 10px; }
 
-.state-panel { display: flex; flex-direction: column; gap: 24px; }
-
-.feature-list { display: flex; flex-direction: column; gap: 14px; padding: 16px; }
-.feature-row { display: flex; align-items: flex-start; gap: 12px; }
-.feature-row svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; }
-.feature-row.amber svg { color: var(--brand-primary); }
-.feature-row.green svg { color: var(--brand-secondary); }
-.feature-row .title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .01em; color: var(--text); margin: 0 0 3px; }
-.feature-row .desc { font-size: 10.5px; color: var(--text-muted-2); line-height: 1.6; margin: 0; }
+.state-panel { display: flex; flex-direction: column; gap: 18px; }
 
 /* ---------- device code (step 1b) ---------- */
 
@@ -250,11 +226,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   border-radius: 8px; padding: 8px 10px; font-size: 12.5px; font-family: inherit;
 }
 
-.commit-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 9px; }
+.commit-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
 .commit-row .k { color: var(--text-muted-2); }
 .commit-row .v { color: #d4d4d8; }
-.progress-track { width: 100%; height: 4px; background: var(--border-muted); border-radius: 999px; overflow: hidden; }
-.progress-fill { height: 100%; width: 66%; background: var(--brand-primary); border-radius: 999px; }
 
 /* ---------- action grid ---------- */
 
@@ -263,14 +237,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
   padding: 15px 6px; border-radius: 12px; background: rgba(24, 24, 27, 0.8); border: 1px solid var(--border-muted);
   color: #d4d4d8; font-size: 10px; font-weight: 500;
-  transition: background-color .2s var(--ease), transform .2s var(--ease), color .2s var(--ease);
+  transition: background-color .15s var(--ease), color .15s var(--ease);
 }
-.btn-action:hover { background: var(--border-muted); color: var(--text); transform: translateY(-1px); }
+.btn-action:hover { background: var(--border-muted); color: var(--text); }
 .btn-action svg { width: 17px; height: 17px; }
 .btn-action.danger { background: rgba(239, 68, 68, 0.05); border-color: rgba(127, 29, 29, 0.3); color: var(--danger-text); }
 .btn-action.danger:hover { background: rgba(239, 68, 68, 0.1); color: #fca5a5; }
 
-.save-dialog-wrap { padding: 0 24px 12px; flex-shrink: 0; position: relative; z-index: 2; }
+.save-dialog-wrap { padding: 0 24px 12px; flex-shrink: 0; }
 
 /* ---------- pending submission ---------- */
 
@@ -280,10 +254,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .pending-card .btn-row button { flex: none; }
 .push-btn {
   background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-strong)); color: #000; font-weight: 700;
-  border-radius: 10px; padding: 8px 14px; font-size: 11.5px; transition: transform .12s var(--ease);
+  border-radius: 10px; padding: 8px 14px; font-size: 11.5px;
 }
-.push-btn:active { transform: scale(0.97); }
-.push-btn:disabled { opacity: 0.6; transform: none; }
+.push-btn:disabled { opacity: 0.6; }
 .discard-btn {
   color: var(--text-muted); border: 1px solid var(--border-muted-2); border-radius: 10px;
   padding: 8px 14px; font-size: 11.5px; transition: color .15s var(--ease), border-color .15s var(--ease);
