@@ -8,17 +8,25 @@ Scoped to **LeetCode only** for v1 (NeetCode dropped for now — see TODO).
 
 ## Decisions baked into this build
 
-- **Notes**: separate `notes.md` per problem folder (not a comment header in
-  the code file). Newest entry is inserted right under the `# Problem Title`
-  header, so the file reads newest-first.
+- **Notes**: separate `notes.md` per problem folder (your written notes plus
+  the Big-O time/space complexity you typed in), *and* a short metadata
+  comment header at the top of every pushed solution file — pushed
+  date/time, difficulty, and the runtime/memory LeetCode itself measured for
+  that submission — using the right line-comment token for that language
+  (`#`, `//`, etc). Newest `notes.md` entry is inserted right under the
+  `# Problem Title` header, so the file reads newest-first.
 - **Resubmission**: versioned, not overwritten. Each push writes
   `{language}_v{N}.{ext}`, so `python_v1.py`, `python_v2.py`, etc. all stay
   in git history as separate files, not just separate commits.
 - **Multi-language**: same folder per problem
-  (`easy/two-sum/python_v1.py`, `easy/two-sum/java_v1.java`, ...), versioned
-  independently per language.
-- **Repo path convention**: `{difficulty}/{slug}/{language}_v{N}.{ext}`,
-  editable per-push in the modal before you hit Push.
+  (`easy/1-two-sum/python_v1.py`, `easy/1-two-sum/java_v1.java`, ...),
+  versioned independently per language.
+- **Repo path convention**: `{difficulty}/{number}-{slug}/{language}_v{N}.{ext}`
+  (e.g. `easy/1-two-sum/python_v1.py`) — the question number is read off the
+  "N. Title" text LeetCode shows. The `{difficulty}` folder is always
+  auto-detected and fixed — not editable — so solutions can't land outside
+  `easy/` / `medium/` / `hard/` by mistake; only the `{number}-{slug}`
+  portion can be edited per-push in the modal.
 - **Closed-without-pushing**: the extension does *not* nag you. If you hit
   Submit, get Accepted, and close the modal (or just don't push), the
   detected submission is kept in `chrome.storage.session` and surfaced the
@@ -50,8 +58,8 @@ DOM re-read that could race the editor.
 Problem **title** and **difficulty** are still read from the DOM (there's no
 clean API for those without extra endpoints), with a text-content fallback
 scan (`getDifficulty()` in `content_script.js`) rather than a brittle
-hashed-class selector — if it ever returns "unknown", the repo path just
-falls back to an `unknown/` folder that you can edit before pushing.
+hashed-class selector — if it ever returns "unknown", the destination folder
+falls back to `misc/` (still fixed, not editable).
 
 ## Files
 
@@ -134,10 +142,12 @@ No build step — it's plain JS, loadable as an unpacked extension as-is.
      in the console *before* submitting.
    - Check `chrome://extensions` → LeetCommit → "service worker" link →
      inspect it → console, for any errors from `background.js`.
-5. Fill in notes / complexity, confirm the repo path field looks right
-   (`easy/two-sum` for that example), click **Push to GitHub**.
+5. Fill in notes / complexity, confirm the destination folder shown
+   (`easy/1-two-sum` for that example) looks right, click **Push to GitHub**.
 6. Check your repo — you should see
-   `easy/two-sum/{language}_v1.{ext}` and `easy/two-sum/notes.md`.
+   `easy/1-two-sum/{language}_v1.{ext}` and `easy/1-two-sum/notes.md`. Open
+   the solution file and confirm the comment header at the top has the
+   pushed date/time, difficulty, and the runtime/memory LeetCode reported.
 7. **Test the negative case**: submit an intentionally wrong solution
    (e.g. `return []`) and confirm no modal appears — this is the "not a
    runtime/wrong-answer result" requirement.
@@ -145,14 +155,14 @@ No build step — it's plain JS, loadable as an unpacked extension as-is.
    it writes `{language}_v2.{ext}` (not overwriting v1) and prepends a new
    dated section to `notes.md`.
 9. **Test multi-language**: solve the same problem in a second language,
-   confirm it lands in the same `easy/two-sum/` folder as
+   confirm it lands in the same `easy/1-two-sum/` folder as
    `{other-language}_v1.{ext}`.
 10. **Test the skip/recovery path**: get an Accepted result, click **Skip**
     instead of Push, then open the toolbar popup — it should show the
-    problem under "pending submission" with a **Push now** button. (Popup
-    pushes default to an `misc/` folder since difficulty isn't
-    re-derived there — edit the path afterward on GitHub if you want it
-    elsewhere.)
+    problem under "pending submission" with a **Push now** button. This
+    still lands in the correct `easy/` / `medium/` / `hard/` folder since
+    the difficulty is captured at detection time, before the modal is even
+    shown.
 
 ## Known caveats
 

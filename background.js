@@ -69,6 +69,43 @@ async function putFile(owner, repo, path, branch, token, content, message, sha) 
   return res.json();
 }
 
+// Line-comment token per file extension, used to write the metadata header
+// at the top of each pushed solution file.
+const COMMENT_PREFIX_BY_EXT = {
+  py: "#", java: "//", cpp: "//", c: "//", cs: "//", js: "//", ts: "//",
+  php: "//", swift: "//", kt: "//", dart: "//", go: "//", rb: "#",
+  scala: "//", rs: "//", rkt: ";;", erl: "%", ex: "#",
+};
+
+// Folder placement is always automatic — easy/medium/hard from the detected
+// difficulty, "misc" only if it genuinely couldn't be determined. Re-checked
+// here (not just trusted from the caller) so a stale/bad value never lands a
+// solution outside the three difficulty folders.
+function normalizeDifficultyFolder(difficulty) {
+  const v = (difficulty || "").toLowerCase().trim();
+  return v === "easy" || v === "medium" || v === "hard" ? v : "misc";
+}
+
+function formatPushedAt() {
+  const iso = new Date().toISOString();
+  return `${iso.slice(0, 10)} ${iso.slice(11, 19)} UTC`;
+}
+
+function buildHeaderComment(ext, { difficulty, runtime, memory }) {
+  const prefix = COMMENT_PREFIX_BY_EXT[ext] || "#";
+  const difficultyFolder = normalizeDifficultyFolder(difficulty);
+  const difficultyLabel = difficultyFolder === "misc"
+    ? "Unknown"
+    : difficultyFolder[0].toUpperCase() + difficultyFolder.slice(1);
+  const lines = [
+    `Pushed: ${formatPushedAt()}`,
+    `Difficulty: ${difficultyLabel}`,
+    `Runtime: ${runtime || "Not available"}`,
+    `Memory: ${memory || "Not available"}`,
+  ];
+  return lines.map((line) => `${prefix} ${line}`).join("\n") + "\n\n";
+}
+
 async function pushSolution(payload) {
   const { githubToken: token, owner, repo, branch } = await getConfig();
   const {
@@ -83,9 +120,11 @@ async function pushSolution(payload) {
     timeComplexity,
     spaceComplexity,
     commitMessageOverride,
+    runtime,
+    memory,
   } = payload;
 
-  const basePath = `${difficulty}/${slug}`;
+  const basePath = `${normalizeDifficultyFolder(difficulty)}/${slug}`;
 
   // Versioned filenames per language: python_v1.py, python_v2.py, ...
   const existing = await listDir(owner, repo, basePath, branch, token);
@@ -102,7 +141,9 @@ async function pushSolution(payload) {
   const commitMessage =
     commitMessageOverride || `Add solution: ${problemTitle} (${language}, v${nextVersion})`;
 
-  await putFile(owner, repo, filePath, branch, token, code, commitMessage);
+  const fileContent = buildHeaderComment(ext, { difficulty, runtime, memory }) + code;
+
+  await putFile(owner, repo, filePath, branch, token, fileContent, commitMessage);
 
   // Append-only notes.md per problem folder.
   const notesPath = `${basePath}/notes.md`;

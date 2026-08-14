@@ -36,7 +36,6 @@
       lang: body.lang || body.language || "unknown",
       code: body.typed_code || body.code || "",
       questionId: body.question_id || null,
-      submittedAt: Date.now(),
     });
   }
 

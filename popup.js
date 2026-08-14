@@ -35,7 +35,7 @@ async function renderPending() {
     return;
   }
 
-  const { title, slug, lang, code, detectedAt } = pendingSubmission;
+  const { title, slug, folderSlug, lang, code, detectedAt, difficulty, runtime, memory } = pendingSubmission;
   const minutesAgo = Math.round((Date.now() - detectedAt) / 60000);
 
   section.innerHTML = `
@@ -67,8 +67,8 @@ async function renderPending() {
         payload: {
           problemTitle: title,
           problemUrl: `https://leetcode.com/problems/${slug}/`,
-          slug,
-          difficulty: "misc",
+          slug: folderSlug || slug,
+          difficulty: difficulty || "misc",
           language: (lang || "unknown").toLowerCase(),
           ext: extFor(lang),
           code,
@@ -76,6 +76,8 @@ async function renderPending() {
           timeComplexity: "",
           spaceComplexity: "",
           commitMessageOverride: "",
+          runtime,
+          memory,
         },
       },
       (response) => {

@@ -53,6 +53,15 @@
     return "unknown";
   }
 
+  // Folder name gets the question number prefixed (e.g. "1-two-sum"), read
+  // off the "N. Title" text LeetCode shows. The URL slug itself is kept
+  // separate from this — the problem link must stay the plain "two-sum"
+  // form, only the repo folder name gets the number.
+  function folderSlugFor(title, slug) {
+    const m = title.match(/^(\d+)\./);
+    return m ? `${m[1]}-${slug}` : slug;
+  }
+
   function buildModal(detail) {
     const host = document.createElement("div");
     host.id = "leetcommit-host";
@@ -61,8 +70,12 @@
 
     const title = getProblemTitle();
     const difficulty = getDifficulty();
+    // Folder placement is always automatic — easy/medium/hard from the
+    // detected difficulty, "misc" only if the DOM scan couldn't tell.
+    const diffFolder = ["easy", "medium", "hard"].includes(difficulty) ? difficulty : "misc";
     const slug = detail.slug;
     const problemUrl = `https://leetcode.com/problems/${slug}/`;
+    const folderSlug = folderSlugFor(title, slug);
     const ext = extFor(detail.lang);
 
     shadow.innerHTML = `
@@ -95,6 +108,13 @@
         textarea.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
         .row { display: flex; gap: 10px; }
         .row > div { flex: 1; }
+        .path-row { display: flex; align-items: center; gap: 6px; }
+        .path-prefix {
+          background: #262626; border: 1px solid #3a3a3a; border-radius: 6px; padding: 8px 10px;
+          color: #9a9a9a; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+          white-space: nowrap;
+        }
+        .path-row input[type=text] { flex: 1; }
         .code-preview {
           background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 6px; padding: 10px;
           max-height: 160px; overflow: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -116,8 +136,11 @@
           <h2>${title} <span class="badge ${difficulty}">${difficulty}</span></h2>
           <div class="sub">Accepted &middot; ${detail.lang} &middot; ${detail.totalCorrect || "?"}/${detail.totalTestcases || "?"} testcases</div>
 
-          <label>Repo path (editable)</label>
-          <input type="text" id="repoPath" value="" />
+          <label>Destination folder (auto-detected from difficulty)</label>
+          <div class="path-row">
+            <span class="path-prefix">${diffFolder}/</span>
+            <input type="text" id="repoSlug" value="${folderSlug}" />
+          </div>
 
           <label>Solution code</label>
           <div class="code-preview" id="codePreview"></div>
@@ -154,11 +177,6 @@
       host.remove();
     }
 
-    chrome.storage.local.get(["owner", "repo", "difficultyFolder"], (cfg) => {
-      const diffFolder = difficulty === "unknown" ? "misc" : difficulty;
-      shadow.getElementById("repoPath").value = `${diffFolder}/${slug}`;
-    });
-
     shadow.getElementById("skipBtn").addEventListener("click", () => {
       chrome.runtime.sendMessage({ type: "DISCARD_PENDING" });
       close();
@@ -171,9 +189,7 @@
       statusEl.textContent = "Pushing...";
       statusEl.className = "status";
 
-      const repoPath = shadow.getElementById("repoPath").value.trim();
-      const [difficultyFolder, ...rest] = repoPath.split("/");
-      const slugFromPath = rest.join("/") || slug;
+      const slugValue = shadow.getElementById("repoSlug").value.trim() || folderSlug;
 
       chrome.runtime.sendMessage(
         {
@@ -181,8 +197,8 @@
           payload: {
             problemTitle: title,
             problemUrl,
-            slug: slugFromPath,
-            difficulty: difficultyFolder || difficulty,
+            slug: slugValue,
+            difficulty: diffFolder,
             language: (detail.lang || "unknown").toLowerCase(),
             ext,
             code: detail.code,
@@ -190,6 +206,8 @@
             timeComplexity: shadow.getElementById("timeComplexity").value,
             spaceComplexity: shadow.getElementById("spaceComplexity").value,
             commitMessageOverride: shadow.getElementById("commitMsg").value.trim(),
+            runtime: detail.runtime,
+            memory: detail.memory,
           },
         },
         (response) => {
@@ -220,13 +238,18 @@
     // Let the background script know a submission is pending, so the
     // toolbar popup can offer a "push" affordance even if this modal
     // gets closed/skipped or the tab is later revisited.
+    const detectedTitle = getProblemTitle();
     chrome.runtime.sendMessage({
       type: "SUBMISSION_DETECTED",
       payload: {
-        title: getProblemTitle(),
+        title: detectedTitle,
         slug: detail.slug,
+        folderSlug: folderSlugFor(detectedTitle, detail.slug),
         lang: detail.lang,
         code: detail.code,
+        difficulty: getDifficulty(),
+        runtime: detail.runtime,
+        memory: detail.memory,
         detectedAt: Date.now(),
       },
     });
