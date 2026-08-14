@@ -1,3 +1,8 @@
+---
+title: Privacy Policy — LeetCommit
+permalink: /privacy
+---
+
 # Privacy Policy — LeetCommit
 
 **Effective: August 13, 2026**
