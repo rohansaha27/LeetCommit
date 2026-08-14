@@ -84,10 +84,10 @@
         .overlay {
           position: fixed; inset: 0; background: rgba(0,0,0,0.5);
           z-index: 2147483647; display: flex; align-items: center; justify-content: center;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         }
         .modal {
-          background: #1a1a1a; color: #f0f0f0; width: 560px; max-width: 92vw;
+          background: #1a1a1a; color: #f0efec; width: 560px; max-width: 92vw;
           max-height: 88vh; overflow-y: auto; border-radius: 10px; padding: 20px 24px;
           box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
@@ -125,11 +125,11 @@
           border: none; border-radius: 6px; padding: 9px 16px; font-size: 13px; cursor: pointer;
         }
         .btn-skip { background: #2a2a2a; color: #ccc; }
-        .btn-push { background: #2ea043; color: white; font-weight: 600; }
-        .btn-push:disabled { background: #235c30; cursor: default; }
+        .btn-push { background: #7ffc94; color: #0f0f0f; font-weight: 700; }
+        .btn-push:disabled { background: #3a5c43; color: #a3a3a3; cursor: default; }
         .status { font-size: 12px; margin-top: 10px; min-height: 16px; }
         .status.error { color: #ff5252; }
-        .status.ok { color: #4caf50; }
+        .status.ok { color: #7ffc94; }
       </style>
       <div class="overlay">
         <div class="modal">
