@@ -83,9 +83,16 @@ async function renderPending() {
           memory,
         },
       },
-      (response) => {
+      async (response) => {
         if (response && response.ok) {
           btn.textContent = `Pushed as ${response.fileName}`;
+          const { githubToken, owner, repo, branch } = await chrome.storage.local.get([
+            "githubToken",
+            "owner",
+            "repo",
+            "branch",
+          ]);
+          if (githubToken && owner && repo) loadLastCommit(githubToken, owner, repo, branch || "main");
           setTimeout(renderPending, 1200);
         } else {
           btn.disabled = false;

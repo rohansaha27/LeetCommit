@@ -150,7 +150,7 @@ async function loadLastCommit(token, owner, repo, branch) {
   try {
     const res = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/commits?sha=${encodeURIComponent(branch)}&per_page=1`,
-      { headers: apiHeaders(token) }
+      { headers: apiHeaders(token), cache: "no-store" }
     );
     if (!res.ok) return;
     const commits = await res.json();
@@ -299,6 +299,13 @@ async function startConnect() {
     deviceCode: device.device_code,
     userCode: device.user_code,
     verificationUri: device.verification_uri,
+    // GitHub's device page accepts a "?user_code=" param and skips straight
+    // to the confirm screen, even when the API response itself omits
+    // verification_uri_complete (as this app's does) — build it ourselves
+    // so the user never has to copy/paste the code by hand.
+    verificationUriComplete:
+      device.verification_uri_complete ||
+      `${device.verification_uri}?user_code=${encodeURIComponent(device.user_code)}`,
     intervalMs: (device.interval || 5) * 1000,
     expiresAt: Date.now() + device.expires_in * 1000,
     nextCheckAt: Date.now() + (device.interval || 5) * 1000,
@@ -310,7 +317,7 @@ async function startConnect() {
   deviceStatusEl.textContent = "Waiting for authorization…";
   connectBtn.disabled = false;
 
-  chrome.tabs.create({ url: pending.verificationUri });
+  chrome.tabs.create({ url: pending.verificationUriComplete });
 
   checkToken(pending, pending.intervalMs);
 }
@@ -502,7 +509,7 @@ copyCodeBtn.addEventListener("click", async () => {
 
 reopenBtn.addEventListener("click", async () => {
   const { pendingDevice } = await chrome.storage.local.get(["pendingDevice"]);
-  if (pendingDevice) chrome.tabs.create({ url: pendingDevice.verificationUri });
+  if (pendingDevice) chrome.tabs.create({ url: pendingDevice.verificationUriComplete || pendingDevice.verificationUri });
 });
 
 cancelBtn.addEventListener("click", async () => {

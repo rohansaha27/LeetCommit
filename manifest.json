@@ -23,6 +23,11 @@
       "matches": ["https://leetcode.com/problems/*"],
       "js": ["content_script.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://github.com/login/device*"],
+      "js": ["github_device_fill.js"],
+      "run_at": "document_idle"
     }
   ],
   "action": {
