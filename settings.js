@@ -116,9 +116,13 @@ function showDone(cfg) {
   const repos = cfg.availableRepos || [];
   if (repos.length > 1) {
     repoPickerEl.style.display = "block";
-    repoSelectEl.innerHTML = repos
-      .map((r) => `<option value="${r.fullName}">${r.fullName}</option>`)
-      .join("");
+    repoSelectEl.innerHTML = "";
+    for (const r of repos) {
+      const opt = document.createElement("option");
+      opt.value = r.fullName;
+      opt.textContent = r.fullName;
+      repoSelectEl.appendChild(opt);
+    }
     repoSelectEl.value = `${cfg.owner}/${cfg.repo}`;
   } else {
     repoPickerEl.style.display = "none";
@@ -179,9 +183,14 @@ async function loadBranches(token, owner, repo, currentBranch) {
     if (!names.includes(defaultBranch)) names.unshift(defaultBranch);
 
     const selected = currentBranch && names.includes(currentBranch) ? currentBranch : defaultBranch;
-    branchEl.innerHTML = names
-      .map((n) => `<option value="${n}"${n === selected ? " selected" : ""}>${n}</option>`)
-      .join("");
+    branchEl.innerHTML = "";
+    for (const n of names) {
+      const opt = document.createElement("option");
+      opt.value = n;
+      opt.textContent = n;
+      if (n === selected) opt.selected = true;
+      branchEl.appendChild(opt);
+    }
 
     if (selected !== currentBranch) {
       await chrome.storage.local.set({ branch: selected });

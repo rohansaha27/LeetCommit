@@ -86,6 +86,10 @@ function normalizeDifficultyFolder(difficulty) {
   return v === "easy" || v === "medium" || v === "hard" ? v : "misc";
 }
 
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function formatPushedAt() {
   const iso = new Date().toISOString();
   return `${iso.slice(0, 10)} ${iso.slice(11, 19)} UTC`;
@@ -128,7 +132,7 @@ async function pushSolution(payload) {
 
   // Versioned filenames per language: python_v1.py, python_v2.py, ...
   const existing = await listDir(owner, repo, basePath, branch, token);
-  const versionRe = new RegExp(`^${language}_v(\\d+)\\.${ext}$`, "i");
+  const versionRe = new RegExp(`^${escapeRegExp(language)}_v(\\d+)\\.${escapeRegExp(ext)}$`, "i");
   let maxVersion = 0;
   for (const f of existing) {
     const m = f.name.match(versionRe);

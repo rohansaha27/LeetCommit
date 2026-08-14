@@ -21,6 +21,9 @@ const EXT_BY_LANG = {
   ruby: "rb",
   scala: "scala",
   rust: "rs",
+  racket: "rkt",
+  erlang: "erl",
+  elixir: "ex",
 };
 
 function extFor(lang) {
@@ -93,5 +96,9 @@ async function renderPending() {
     );
   });
 }
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === "session" && "pendingSubmission" in changes) renderPending();
+});
 
 renderPending();

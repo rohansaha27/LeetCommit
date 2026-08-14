@@ -41,8 +41,8 @@
     return docTitle || "Untitled Problem";
   }
 
-  function getDifficulty() {
-    const candidates = Array.from(document.querySelectorAll("div, span, button"));
+  function findDifficultyIn(root) {
+    const candidates = Array.from(root.querySelectorAll("div, span, button"));
     for (const el of candidates) {
       const text = el.textContent && el.textContent.trim();
       if (text === "Easy" || text === "Medium" || text === "Hard") {
@@ -50,7 +50,22 @@
         if (el.children.length === 0) return text.toLowerCase();
       }
     }
-    return "unknown";
+    return null;
+  }
+
+  function getDifficulty() {
+    // Search near the title first — a page-wide scan can match a difficulty
+    // badge belonging to an unrelated sidebar entry (e.g. "Similar
+    // Questions") before it reaches the current problem's own badge. Only
+    // fall back to scanning the whole document if nothing turns up nearby.
+    const titleEl = document.querySelector('[data-cy="question-title"], a[href^="/problems/"] div.text-title-large, div.text-title-large');
+    if (titleEl) {
+      let ancestor = titleEl;
+      for (let i = 0; i < 6 && ancestor.parentElement; i++) ancestor = ancestor.parentElement;
+      const nearby = findDifficultyIn(ancestor);
+      if (nearby) return nearby;
+    }
+    return findDifficultyIn(document) || "unknown";
   }
 
   // Folder name gets the question number prefixed (e.g. "1-two-sum"), read
