@@ -77,6 +77,27 @@ const COMMENT_PREFIX_BY_EXT = {
   scala: "//", rs: "//", rkt: ";;", erl: "%", ex: "#",
 };
 
+// Accepts "n^2", "n log n", or full "O(n^2)" and stores canonical O(...).
+function formatBigO(raw) {
+  if (raw == null) return "";
+  const s = String(raw).trim();
+  if (!s) return "";
+
+  const wrapped = s.match(/^O\s*\(\s*([\s\S]*?)\s*\)\s*$/i);
+  if (wrapped) {
+    const inner = wrapped[1].trim();
+    return inner ? `O(${inner})` : "";
+  }
+
+  const bareO = s.match(/^O\s+(.+)$/i);
+  if (bareO) {
+    const inner = bareO[1].trim();
+    return inner ? `O(${inner})` : "";
+  }
+
+  return `O(${s})`;
+}
+
 // Folder placement is always automatic — easy/medium/hard from the detected
 // difficulty, "misc" only if it genuinely couldn't be determined. Re-checked
 // here (not just trusted from the caller) so a stale/bad value never lands a
@@ -157,8 +178,8 @@ async function pushSolution(payload) {
     `## ${language} — v${nextVersion} (${dateStr})`,
     "",
     `- Problem: ${problemUrl}`,
-    `- Time complexity: ${timeComplexity || "_not specified_"}`,
-    `- Space complexity: ${spaceComplexity || "_not specified_"}`,
+    `- Time complexity: ${formatBigO(timeComplexity) || "_not specified_"}`,
+    `- Space complexity: ${formatBigO(spaceComplexity) || "_not specified_"}`,
     `- Solution file: [\`${fileName}\`](./${fileName})`,
     "",
     notes && notes.trim() ? notes.trim() : "_No notes provided._",

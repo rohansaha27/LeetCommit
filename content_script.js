@@ -166,11 +166,11 @@
           <div class="row">
             <div>
               <label>Time complexity</label>
-              <input type="text" id="timeComplexity" placeholder="O(n)" />
+              <input type="text" id="timeComplexity" placeholder="n^2" />
             </div>
             <div>
               <label>Space complexity</label>
-              <input type="text" id="spaceComplexity" placeholder="O(1)" />
+              <input type="text" id="spaceComplexity" placeholder="1" />
             </div>
           </div>
 
