@@ -30,6 +30,10 @@ Resubmits write `v2`, `v3`, … instead of overwriting. Same problem in another 
 
 ## Install
 
+**[Chrome Web Store](https://chromewebstore.google.com/detail/leetcommit/cebogobinibhehlhjhkfbfphlmhokgco)** — install, then open the toolbar popup → Connect GitHub → Select a repository.
+
+From source (dev):
+
 1. Clone this repo
 2. Chrome → `chrome://extensions` → Developer mode → **Load unpacked** → select this folder
 3. Open the toolbar popup → Connect GitHub → Select a repository
