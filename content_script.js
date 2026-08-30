@@ -123,6 +123,18 @@
         textarea.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
         .row { display: flex; gap: 10px; }
         .row > div { flex: 1; }
+        .complexity-field {
+          display: flex; align-items: center; background: #262626;
+          border: 1px solid #3a3a3a; border-radius: 6px; padding: 0 10px;
+        }
+        .complexity-field:focus-within { border-color: #5a5a5a; }
+        .complexity-affix {
+          color: #9a9a9a; font-size: 13px; user-select: none; flex-shrink: 0;
+        }
+        .complexity-field input[type=text] {
+          border: none; background: transparent; padding: 8px 4px; flex: 1; min-width: 0;
+        }
+        .complexity-field input[type=text]:focus { outline: none; }
         .path-row { display: flex; align-items: center; gap: 6px; }
         .path-prefix {
           background: #262626; border: 1px solid #3a3a3a; border-radius: 6px; padding: 8px 10px;
@@ -166,11 +178,19 @@
           <div class="row">
             <div>
               <label>Time complexity</label>
-              <input type="text" id="timeComplexity" placeholder="n^2" />
+              <div class="complexity-field">
+                <span class="complexity-affix">O(</span>
+                <input type="text" id="timeComplexity" placeholder="n^2" autocomplete="off" />
+                <span class="complexity-affix">)</span>
+              </div>
             </div>
             <div>
               <label>Space complexity</label>
-              <input type="text" id="spaceComplexity" placeholder="1" />
+              <div class="complexity-field">
+                <span class="complexity-affix">O(</span>
+                <input type="text" id="spaceComplexity" placeholder="1" autocomplete="off" />
+                <span class="complexity-affix">)</span>
+              </div>
             </div>
           </div>
 

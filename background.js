@@ -4,6 +4,13 @@
 // popup when a modal gets skipped or closed.
 
 const GITHUB_API = "https://api.github.com";
+// Must match GITHUB_CLIENT_ID in settings.js — used to refresh expired
+// user-to-server tokens from the GitHub App device flow.
+const GITHUB_CLIENT_ID = "Iv23li582YbbQjA4wwt5";
+const ACCESS_TOKEN_URL = "https://github.com/login/oauth/access_token";
+const AUTH_EXPIRED_MSG =
+  "GitHub login expired — open the LeetCommit popup and Connect GitHub again.";
+const TOKEN_REFRESH_SKEW_MS = 60_000;
 
 function authHeaders(token) {
   return {
@@ -26,33 +33,146 @@ function fromBase64Utf8(b64) {
   return new TextDecoder().decode(bytes);
 }
 
-async function getConfig() {
-  const cfg = await chrome.storage.local.get(["githubToken", "owner", "repo", "branch"]);
-  if (!cfg.githubToken || !cfg.owner || !cfg.repo) {
-    throw new Error("LeetCommit isn't configured yet — set your GitHub token, owner and repo in the extension's Options page.");
-  }
-  return { branch: "main", ...cfg };
+async function clearAuthTokens() {
+  await chrome.storage.local.remove([
+    "githubToken",
+    "githubRefreshToken",
+    "githubTokenExpiresAt",
+  ]);
 }
 
-async function listDir(owner, repo, path, branch, token) {
+async function persistTokenResponse(data) {
+  if (!data || typeof data.access_token !== "string" || !data.access_token) {
+    throw new Error("invalid token response");
+  }
+  const update = { githubToken: data.access_token };
+  if (typeof data.refresh_token === "string" && data.refresh_token) {
+    update.githubRefreshToken = data.refresh_token;
+  }
+  if (data.expires_in != null && Number.isFinite(Number(data.expires_in))) {
+    update.githubTokenExpiresAt = Date.now() + Number(data.expires_in) * 1000;
+  } else {
+    update.githubTokenExpiresAt = null;
+  }
+  await chrome.storage.local.set(update);
+  return data.access_token;
+}
+
+async function refreshAccessToken(refreshToken) {
+  if (!refreshToken || typeof refreshToken !== "string") {
+    throw new Error("missing refresh token");
+  }
+  const res = await fetch(ACCESS_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      client_id: GITHUB_CLIENT_ID,
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+    }),
+  });
+  const data = await res.json();
+  if (!data.access_token) {
+    throw new Error(data.error_description || data.error || "token refresh failed");
+  }
+  return persistTokenResponse(data);
+}
+
+async function ensureGithubToken() {
+  const cfg = await chrome.storage.local.get([
+    "githubToken",
+    "githubRefreshToken",
+    "githubTokenExpiresAt",
+  ]);
+  if (!cfg.githubToken) {
+    throw new Error(
+      "LeetCommit isn't configured yet — Connect GitHub in the extension popup."
+    );
+  }
+
+  const expiresAt = cfg.githubTokenExpiresAt;
+  const shouldRefresh =
+    typeof expiresAt === "number" &&
+    Date.now() >= expiresAt - TOKEN_REFRESH_SKEW_MS &&
+    cfg.githubRefreshToken;
+
+  if (shouldRefresh) {
+    try {
+      return await refreshAccessToken(cfg.githubRefreshToken);
+    } catch (_) {
+      await clearAuthTokens();
+      throw new Error(AUTH_EXPIRED_MSG);
+    }
+  }
+
+  return cfg.githubToken;
+}
+
+// Authenticated fetch that refreshes once on 401 when a refresh token exists.
+async function githubFetch(url, options = {}) {
+  let token = await ensureGithubToken();
+  const buildHeaders = (t) => ({
+    ...authHeaders(t),
+    ...(options.headers || {}),
+  });
+
+  let res = await fetch(url, { ...options, headers: buildHeaders(token) });
+  if (res.status !== 401) return res;
+
+  const { githubRefreshToken } = await chrome.storage.local.get("githubRefreshToken");
+  if (!githubRefreshToken) {
+    await clearAuthTokens();
+    throw new Error(AUTH_EXPIRED_MSG);
+  }
+
+  try {
+    token = await refreshAccessToken(githubRefreshToken);
+  } catch (_) {
+    await clearAuthTokens();
+    throw new Error(AUTH_EXPIRED_MSG);
+  }
+
+  res = await fetch(url, { ...options, headers: buildHeaders(token) });
+  if (res.status === 401) {
+    await clearAuthTokens();
+    throw new Error(AUTH_EXPIRED_MSG);
+  }
+  return res;
+}
+
+async function getConfig() {
+  const token = await ensureGithubToken();
+  const cfg = await chrome.storage.local.get(["owner", "repo", "branch"]);
+  if (!cfg.owner || !cfg.repo) {
+    throw new Error(
+      "LeetCommit isn't configured yet — Connect GitHub and select a repository in the extension popup."
+    );
+  }
+  return { branch: "main", githubToken: token, ...cfg };
+}
+
+async function listDir(owner, repo, path, branch) {
   const url = `${GITHUB_API}/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
-  const res = await fetch(url, { headers: authHeaders(token) });
+  const res = await githubFetch(url);
   if (res.status === 404) return [];
   if (!res.ok) throw new Error(`GitHub error listing ${path}: ${res.status} ${await res.text()}`);
   const data = await res.json();
   return Array.isArray(data) ? data : [];
 }
 
-async function getFile(owner, repo, path, branch, token) {
+async function getFile(owner, repo, path, branch) {
   const url = `${GITHUB_API}/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
-  const res = await fetch(url, { headers: authHeaders(token) });
+  const res = await githubFetch(url);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`GitHub error reading ${path}: ${res.status} ${await res.text()}`);
   const data = await res.json();
   return { sha: data.sha, content: fromBase64Utf8(data.content) };
 }
 
-async function putFile(owner, repo, path, branch, token, content, message, sha) {
+async function putFile(owner, repo, path, branch, content, message, sha) {
   const url = `${GITHUB_API}/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
   const body = {
     message,
@@ -60,9 +180,9 @@ async function putFile(owner, repo, path, branch, token, content, message, sha) 
     branch,
   };
   if (sha) body.sha = sha;
-  const res = await fetch(url, {
+  const res = await githubFetch(url, {
     method: "PUT",
-    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`GitHub error writing ${path}: ${res.status} ${await res.text()}`);
@@ -132,7 +252,7 @@ function buildHeaderComment(ext, { difficulty, runtime, memory }) {
 }
 
 async function pushSolution(payload) {
-  const { githubToken: token, owner, repo, branch } = await getConfig();
+  const { owner, repo, branch } = await getConfig();
   const {
     problemTitle,
     problemUrl,
@@ -152,7 +272,7 @@ async function pushSolution(payload) {
   const basePath = `${normalizeDifficultyFolder(difficulty)}/${slug}`;
 
   // Versioned filenames per language: python_v1.py, python_v2.py, ...
-  const existing = await listDir(owner, repo, basePath, branch, token);
+  const existing = await listDir(owner, repo, basePath, branch);
   const versionRe = new RegExp(`^${escapeRegExp(language)}_v(\\d+)\\.${escapeRegExp(ext)}$`, "i");
   let maxVersion = 0;
   for (const f of existing) {
@@ -168,11 +288,11 @@ async function pushSolution(payload) {
 
   const fileContent = buildHeaderComment(ext, { difficulty, runtime, memory }) + code;
 
-  await putFile(owner, repo, filePath, branch, token, fileContent, commitMessage);
+  await putFile(owner, repo, filePath, branch, fileContent, commitMessage);
 
   // Append-only notes.md per problem folder.
   const notesPath = `${basePath}/notes.md`;
-  const existingNotes = await getFile(owner, repo, notesPath, branch, token);
+  const existingNotes = await getFile(owner, repo, notesPath, branch);
   const dateStr = new Date().toISOString().slice(0, 10);
   const section = [
     `## ${language} — v${nextVersion} (${dateStr})`,
@@ -197,7 +317,6 @@ async function pushSolution(payload) {
     repo,
     notesPath,
     branch,
-    token,
     newNotesContent,
     `Update notes: ${problemTitle} (v${nextVersion})`,
     existingNotes ? existingNotes.sha : undefined
@@ -229,6 +348,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "DISCARD_PENDING") {
     chrome.storage.session.remove("pendingSubmission");
     return false;
+  }
+
+  if (message.type === "ENSURE_GITHUB_TOKEN") {
+    ensureGithubToken()
+      .then((token) => sendResponse({ ok: true, token }))
+      .catch((err) => sendResponse({ ok: false, error: err.message }));
+    return true;
   }
 
   if (message.type === "PUSH_SOLUTION") {

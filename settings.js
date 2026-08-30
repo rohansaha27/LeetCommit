@@ -57,6 +57,24 @@ function apiHeaders(token) {
   return { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" };
 }
 
+// Asks the service worker to return a valid access token, refreshing via
+// githubRefreshToken when the short-lived user token has expired.
+function getValidToken() {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ type: "ENSURE_GITHUB_TOKEN" }, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      if (!response || !response.ok || !response.token) {
+        reject(new Error((response && response.error) || "Not connected to GitHub."));
+        return;
+      }
+      resolve(response.token);
+    });
+  });
+}
+
 function setBadge(label, mode) {
   if (!statusBadgeEl) return;
   statusBadgeLabelEl.textContent = label;
@@ -237,6 +255,13 @@ async function loadConfig() {
   ]);
 
   if (cfg.githubToken && cfg.owner && cfg.repo) {
+    try {
+      cfg.githubToken = await getValidToken();
+    } catch (e) {
+      showIdle();
+      setStatus(e.message, "error");
+      return cfg;
+    }
     await renderConnected(cfg);
     refreshRepos(false);
     return cfg;
@@ -258,6 +283,13 @@ async function loadConfig() {
     // Step 1 (authorize) is done but step 2 (pick a repo) isn't. Check in
     // case the repo was picked while this page was closed, otherwise show
     // the "select a repository" prompt.
+    try {
+      cfg.githubToken = await getValidToken();
+    } catch (e) {
+      showIdle();
+      setStatus(e.message, "error");
+      return cfg;
+    }
     showNeedsRepo(cfg);
     await tryCompleteRepoSetup(cfg.githubToken, cfg.githubUser, cfg.githubAvatar);
     return cfg;
@@ -345,7 +377,7 @@ function checkToken(pending, delayMs) {
       const data = await res.json();
 
       if (data.access_token) {
-        await onDeviceFlowSuccess(data.access_token);
+        await onDeviceFlowSuccess(data);
         return;
       }
       if (data.error === "authorization_pending") {
@@ -406,9 +438,22 @@ async function fetchInstalledRepos(token) {
   return { installationId: installation.id, repos };
 }
 
-async function onDeviceFlowSuccess(accessToken) {
+async function onDeviceFlowSuccess(tokenResponse) {
   stopDevicePolling();
   deviceStatusEl.textContent = "Authorized! Checking for a connected repo…";
+
+  const accessToken = tokenResponse.access_token;
+  const toStore = { githubToken: accessToken };
+  if (typeof tokenResponse.refresh_token === "string" && tokenResponse.refresh_token) {
+    toStore.githubRefreshToken = tokenResponse.refresh_token;
+  } else {
+    await chrome.storage.local.remove(["githubRefreshToken", "githubTokenExpiresAt"]);
+  }
+  if (tokenResponse.expires_in != null && Number.isFinite(Number(tokenResponse.expires_in))) {
+    toStore.githubTokenExpiresAt = Date.now() + Number(tokenResponse.expires_in) * 1000;
+  } else {
+    toStore.githubTokenExpiresAt = null;
+  }
 
   let login = "";
   let avatar = "";
@@ -423,7 +468,9 @@ async function onDeviceFlowSuccess(accessToken) {
     // Non-fatal.
   }
 
-  await chrome.storage.local.set({ githubToken: accessToken, githubUser: login, githubAvatar: avatar });
+  toStore.githubUser = login;
+  toStore.githubAvatar = avatar;
+  await chrome.storage.local.set(toStore);
   await chrome.storage.local.remove("pendingDevice");
 
   await tryCompleteRepoSetup(accessToken, login, avatar);
@@ -466,15 +513,24 @@ async function tryCompleteRepoSetup(token, login, avatar) {
 // will show it, but the active one won't auto-switch. Use Refresh + the
 // picker (or remove the old repo's access on GitHub) to actually switch.
 async function refreshRepos(showFeedback) {
-  const { githubToken, githubUser, githubAvatar, owner, repo, branch } = await chrome.storage.local.get([
-    "githubToken",
+  const { githubUser, githubAvatar, owner, repo, branch } = await chrome.storage.local.get([
     "githubUser",
     "githubAvatar",
     "owner",
     "repo",
     "branch",
   ]);
-  if (!githubToken) return;
+  let githubToken;
+  try {
+    githubToken = await getValidToken();
+  } catch (e) {
+    if (showFeedback) setStatus(e.message, "error");
+    else {
+      showIdle();
+      setStatus(e.message, "error");
+    }
+    return;
+  }
   if (showFeedback) setStatus("Refreshing…");
   try {
     const { installationId, repos } = await fetchInstalledRepos(githubToken);
@@ -530,14 +586,15 @@ selectRepoBtn.addEventListener("click", () => {
 });
 
 switchRepoBtn.addEventListener("click", async () => {
-  const { installationId, githubToken } = await chrome.storage.local.get(["installationId", "githubToken"]);
+  const { installationId } = await chrome.storage.local.get(["installationId"]);
   let id = installationId;
 
   // installationId can be missing on storage left over from before this
   // field existed. Re-derive it live from the token rather than dead-ending.
-  if (!id && githubToken) {
+  if (!id) {
     try {
-      const fresh = await fetchInstalledRepos(githubToken);
+      const token = await getValidToken();
+      const fresh = await fetchInstalledRepos(token);
       id = fresh.installationId;
       if (id) await chrome.storage.local.set({ installationId: id });
     } catch (e) {
@@ -571,6 +628,8 @@ async function disconnectAll() {
   stopDevicePolling();
   await chrome.storage.local.remove([
     "githubToken",
+    "githubRefreshToken",
+    "githubTokenExpiresAt",
     "githubUser",
     "githubAvatar",
     "installationId",
@@ -589,8 +648,13 @@ needsRepoDisconnectBtn.addEventListener("click", disconnectAll);
 branchEl.addEventListener("change", async () => {
   await chrome.storage.local.set({ branch: branchEl.value });
   setStatus(`Branch switched to ${branchEl.value}.`, "ok");
-  const { githubToken, owner, repo } = await chrome.storage.local.get(["githubToken", "owner", "repo"]);
-  loadLastCommit(githubToken, owner, repo, branchEl.value);
+  const { owner, repo } = await chrome.storage.local.get(["owner", "repo"]);
+  try {
+    const githubToken = await getValidToken();
+    loadLastCommit(githubToken, owner, repo, branchEl.value);
+  } catch (e) {
+    setStatus(e.message, "error");
+  }
 });
 
 loadConfig();

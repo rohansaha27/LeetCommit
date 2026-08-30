@@ -27,7 +27,7 @@ When you connect your GitHub account (via GitHub's OAuth Device Flow), the
 extension stores the following in your browser's local extension storage
 (`chrome.storage.local`):
 
-- Your GitHub access token
+- Your GitHub access token (and refresh token, when GitHub issues one)
 - Your GitHub username and avatar URL
 - The GitHub App installation ID, and the owner/repo/branch you selected as
   the push destination
