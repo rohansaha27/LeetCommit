@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LeetCommit",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Push accepted LeetCode solutions straight to a GitHub repo, with your own notes attached.",
   "permissions": ["storage"],
   "host_permissions": [
